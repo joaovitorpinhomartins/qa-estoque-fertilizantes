@@ -1,0 +1,20 @@
+{
+  "name": "qa-estoque-fertilizantes",
+  "version": "0.1.0",
+  "description": "Projeto de portfólio QA: automação de API e E2E com Playwright sobre um sistema de estoque de fertilizantes.",
+  "type": "module",
+  "scripts": {
+    "start": "node app/server.js",
+    "test": "playwright test",
+    "test:api": "playwright test tests/api",
+    "test:e2e": "playwright test tests/e2e",
+    "report": "playwright show-report",
+    "lint": "eslint .",
+    "format": "prettier --write ."
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.56.0",
+    "eslint": "^9.0.0",
+    "prettier": "^3.0.0"
+  }
+}
