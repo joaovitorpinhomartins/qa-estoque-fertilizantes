@@ -1,5 +1,7 @@
 import http from 'node:http';
 import { db, nextId, reset } from './store.js';
+import { isNonEmptyString, isPositiveNumber } from './validacao.js';
+import { criarPedido, cancelarPedido } from './pedidos.js';
 
 const PORT = process.env.PORT || 3000;
 
@@ -21,9 +23,6 @@ const readJson = (req) =>
       }
     });
   });
-
-const isNonEmptyString = (v) => typeof v === 'string' && v.trim().length > 0;
-const isPositiveNumber = (v) => typeof v === 'number' && Number.isFinite(v) && v > 0;
 
 // --- Fertilizantes ---------------------------------------------------------
 function criarFertilizante(body) {
@@ -98,6 +97,24 @@ const server = http.createServer(async (req, res) => {
     if (method === 'GET' && pathname === '/fazendas') return send(res, 200, db.fazendas);
     if (method === 'POST' && pathname === '/fazendas') {
       const [status, body] = criarFazenda(await readJson(req));
+      return send(res, status, body);
+    }
+
+    if (method === 'GET' && pathname === '/pedidos') return send(res, 200, db.pedidos);
+    if (method === 'POST' && pathname === '/pedidos') {
+      const [status, body] = criarPedido(await readJson(req));
+      return send(res, status, body);
+    }
+
+    const pedidoPorId = pathname.match(/^\/pedidos\/(\d+)$/);
+    if (method === 'GET' && pedidoPorId) {
+      const pedido = db.pedidos.find((p) => p.id === Number(pedidoPorId[1]));
+      return pedido ? send(res, 200, pedido) : send(res, 404, { erro: 'Pedido não encontrado' });
+    }
+
+    const cancelamento = pathname.match(/^\/pedidos\/(\d+)\/cancelar$/);
+    if (method === 'POST' && cancelamento) {
+      const [status, body] = cancelarPedido(Number(cancelamento[1]));
       return send(res, status, body);
     }
 
