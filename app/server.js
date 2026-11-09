@@ -1,7 +1,8 @@
 import http from 'node:http';
 import { db, nextId, reset } from './store.js';
 import { isNonEmptyString, isPositiveNumber } from './validacao.js';
-import { criarPedido, cancelarPedido } from './pedidos.js';
+import { criarPedido, cancelarPedido, agendarPedido } from './pedidos.js';
+import { relatorioDemanda } from './relatorios.js';
 
 const PORT = process.env.PORT || 3000;
 
@@ -116,6 +117,16 @@ const server = http.createServer(async (req, res) => {
     if (method === 'POST' && cancelamento) {
       const [status, body] = cancelarPedido(Number(cancelamento[1]));
       return send(res, status, body);
+    }
+
+    const agendamento = pathname.match(/^\/pedidos\/(\d+)\/agendar$/);
+    if (method === 'POST' && agendamento) {
+      const [status, body] = agendarPedido(Number(agendamento[1]), await readJson(req));
+      return send(res, status, body);
+    }
+
+    if (method === 'GET' && pathname === '/relatorios/demanda') {
+      return send(res, 200, relatorioDemanda());
     }
 
     return send(res, 404, { erro: 'Rota não encontrada' });

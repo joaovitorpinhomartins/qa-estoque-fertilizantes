@@ -117,3 +117,33 @@ export function cancelarPedido(id) {
   pedido.status = 'cancelado';
   return [200, pedido];
 }
+
+// --- Agendamento -----------------------------------------------------------
+const FORMATO_DATA = /^\d{4}-\d{2}-\d{2}$/;
+
+const formatarData = (d) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+function dataValida(texto) {
+  if (typeof texto !== 'string' || !FORMATO_DATA.test(texto)) return false;
+  const [ano, mes, dia] = texto.split('-').map(Number);
+  const data = new Date(ano, mes - 1, dia);
+  return data.getFullYear() === ano && data.getMonth() === mes - 1 && data.getDate() === dia;
+}
+
+export function agendarPedido(id, body) {
+  const pedido = db.pedidos.find((p) => p.id === id);
+  if (!pedido) return [404, { erro: 'Pedido não encontrado' }];
+  if (pedido.status !== 'pendente') {
+    return [409, { erro: `Pedido ${pedido.status} não pode ser agendado` }];
+  }
+  if (!dataValida(body.dataAplicacao)) {
+    return [400, { erro: 'Data de aplicação inválida. Use o formato AAAA-MM-DD' }];
+  }
+  if (body.dataAplicacao < formatarData(new Date())) {
+    return [422, { erro: 'Data de aplicação não pode estar no passado' }];
+  }
+  pedido.dataAplicacao = body.dataAplicacao;
+  pedido.status = 'agendado';
+  return [200, pedido];
+}
