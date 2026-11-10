@@ -1,10 +1,12 @@
 import http from 'node:http';
+import { readFileSync } from 'node:fs';
 import { db, nextId, reset } from './store.js';
 import { isNonEmptyString, isPositiveNumber } from './validacao.js';
 import { criarPedido, cancelarPedido, agendarPedido } from './pedidos.js';
 import { relatorioDemanda } from './relatorios.js';
 
 const PORT = process.env.PORT || 3000;
+const PAGINA = new URL('./public/index.html', import.meta.url);
 
 const send = (res, status, body) => {
   res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8' });
@@ -75,6 +77,11 @@ const server = http.createServer(async (req, res) => {
   const { method } = req;
 
   try {
+    if (method === 'GET' && (pathname === '/' || pathname === '/index.html')) {
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      return res.end(readFileSync(PAGINA));
+    }
+
     if (method === 'GET' && pathname === '/health') return send(res, 200, { status: 'ok' });
 
     // Endpoint de apoio aos testes: limpa os dados entre cenários.

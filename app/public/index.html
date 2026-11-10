@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Estoque de Fertilizantes</title>
+    <style>
+      body { font-family: system-ui, sans-serif; max-width: 960px; margin: 2rem auto; padding: 0 1rem; color: #1f2933; }
+      section { margin-bottom: 2rem; }
+      label { display: inline-block; margin-right: 0.5rem; }
+      .campo { display: inline-block; margin: 0 1rem 0.75rem 0; }
+      table { border-collapse: collapse; width: 100%; }
+      th, td { border: 1px solid #cbd2d9; padding: 0.4rem 0.6rem; text-align: left; }
+      button { margin-left: 0.25rem; }
+      .erro { color: #b42318; }
+      .sucesso { color: #067647; }
+    </style>
+  </head>
+  <body>
+    <h1>Estoque de Fertilizantes</h1>
+
+    <section aria-labelledby="titulo-pedido">
+      <h2 id="titulo-pedido">Novo pedido</h2>
+      <div class="campo">
+        <label for="fertilizante">Fertilizante</label>
+        <select id="fertilizante"></select>
+      </div>
+      <div class="campo">
+        <label for="fazenda">Fazenda</label>
+        <select id="fazenda"></select>
+      </div>
+      <div class="campo">
+        <label for="pivo">Pivô</label>
+        <select id="pivo"></select>
+      </div>
+      <div class="campo">
+        <label for="quantidade">Quantidade</label>
+        <input id="quantidade" type="number" min="1" />
+      </div>
+      <div class="campo">
+        <label for="tipo">Tipo de aplicação</label>
+        <select id="tipo">
+          <option value="terrestre">Terrestre</option>
+          <option value="aerea">Aérea</option>
+        </select>
+      </div>
+      <button id="adicionar" type="button">Adicionar ao carrinho</button>
+
+      <h3>Carrinho</h3>
+      <table aria-label="Carrinho">
+        <thead>
+          <tr><th>Fertilizante</th><th>Fazenda / Pivô</th><th>Quantidade</th><th>Aplicação</th><th>Subtotal</th><th></th></tr>
+        </thead>
+        <tbody id="carrinho"></tbody>
+      </table>
+      <p>Total: <strong id="total-carrinho" data-testid="total-carrinho">R$ 0,00</strong></p>
+      <button id="emitir" type="button">Emitir pedido</button>
+
+      <p id="mensagem-erro" class="erro" role="alert" hidden></p>
+      <p id="mensagem-sucesso" class="sucesso" role="status" hidden></p>
+    </section>
+
+    <section>
+      <h2>Estoque</h2>
+      <table aria-label="Estoque">
+        <thead><tr><th>Fertilizante</th><th>Preço</th><th>Saldo</th></tr></thead>
+        <tbody id="estoque"></tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>Pedidos</h2>
+      <table aria-label="Pedidos">
+        <thead><tr><th>Pedido</th><th>Status</th><th>Data de aplicação</th><th>Total</th><th>Ações</th></tr></thead>
+        <tbody id="pedidos"></tbody>
+      </table>
+    </section>
+
+    <script>
+      const $ = (id) => document.getElementById(id);
+      const brl = (v) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+      const TIPOS = { terrestre: 'Terrestre', aerea: 'Aérea' };
+
+      let fertilizantes = [];
+      let fazendas = [];
+      let pedidos = [];
+      let carrinho = [];
+
+      function el(tag, attrs = {}, ...filhos) {
+        const e = document.createElement(tag);
+        for (const [chave, valor] of Object.entries(attrs)) {
+          if (chave.startsWith('on')) e.addEventListener(chave.slice(2), valor);
+          else e.setAttribute(chave, valor);
+        }
+        e.append(...filhos);
+        return e;
+      }
+
+      async function api(caminho, opcoes = {}) {
+        const resposta = await fetch(caminho, {
+          headers: { 'Content-Type': 'application/json' },
+          ...opcoes,
+        });
+        const corpo = resposta.status === 204 ? null : await resposta.json();
+        return { ok: resposta.ok, corpo };
+      }
+
+      function limparMensagens() {
+        $('mensagem-erro').hidden = true;
+        $('mensagem-sucesso').hidden = true;
+      }
+      function mostrarErro(texto) {
+        limparMensagens();
+        $('mensagem-erro').textContent = texto;
+        $('mensagem-erro').hidden = false;
+      }
+      function mostrarSucesso(texto) {
+        limparMensagens();
+        $('mensagem-sucesso').textContent = texto;
+        $('mensagem-sucesso').hidden = false;
+      }
+
+      function preencherSelect(select, itens) {
+        select.replaceChildren(
+          el('option', { value: '' }, 'Selecione...'),
+          ...itens.map((i) => el('option', { value: String(i.id) }, i.nome)),
+        );
+      }
+
+      function renderSelects() {
+        preencherSelect($('fertilizante'), fertilizantes);
+        preencherSelect($('fazenda'), fazendas);
+        preencherSelect($('pivo'), []);
+      }
+
+      function renderEstoque() {
+        $('estoque').replaceChildren(
+          ...fertilizantes.map((f) =>
+            el('tr', {}, el('td', {}, f.nome), el('td', {}, brl(f.preco)),
+              el('td', { 'data-testid': `saldo-${f.id}` }, String(f.saldo))),
+          ),
+        );
+      }
+
+      function renderCarrinho() {
+        $('carrinho').replaceChildren(
+          ...carrinho.map((item, indice) =>
+            el('tr', {},
+              el('td', {}, item.fertilizante.nome),
+              el('td', {}, `${item.fazenda.nome} / ${item.pivo.nome}`),
+              el('td', {}, String(item.quantidade)),
+              el('td', {}, TIPOS[item.tipoAplicacao]),
+              el('td', {}, brl(item.fertilizante.preco * item.quantidade)),
+              el('td', {}, el('button', {
+                type: 'button',
+                onclick: () => { carrinho.splice(indice, 1); renderCarrinho(); },
+              }, 'Remover')),
+            ),
+          ),
+        );
+        const total = carrinho.reduce((soma, i) => soma + i.fertilizante.preco * i.quantidade, 0);
+        $('total-carrinho').textContent = brl(total);
+      }
+
+      function renderPedidos() {
+        $('pedidos').replaceChildren(
+          ...pedidos.map((p) => {
+            const acoes = el('td');
+            if (p.status === 'pendente') {
+              const data = el('input', { type: 'date', 'aria-label': `Data de aplicação do pedido ${p.id}` });
+              acoes.append(data, el('button', { type: 'button', onclick: () => agendar(p.id, data.value) }, 'Agendar'));
+            }
+            if (p.status !== 'cancelado') {
+              acoes.append(el('button', { type: 'button', onclick: () => cancelar(p.id) }, 'Cancelar'));
+            }
+            return el('tr', { 'data-testid': `pedido-${p.id}` },
+              el('td', {}, `#${p.id}`),
+              el('td', {}, p.status),
+              el('td', {}, p.dataAplicacao ?? '—'),
+              el('td', {}, brl(p.total)),
+              acoes,
+            );
+          }),
+        );
+      }
+
+      async function carregar() {
+        [fertilizantes, fazendas, pedidos] = await Promise.all(
+          ['/fertilizantes', '/fazendas', '/pedidos'].map(async (c) => (await api(c)).corpo),
+        );
+        renderSelects();
+        renderEstoque();
+        renderPedidos();
+        renderCarrinho();
+      }
+
+      function adicionarAoCarrinho() {
+        const fertilizante = fertilizantes.find((f) => String(f.id) === $('fertilizante').value);
+        const fazenda = fazendas.find((f) => String(f.id) === $('fazenda').value);
+        const pivo = fazenda?.pivos.find((p) => String(p.id) === $('pivo').value);
+        const quantidade = Number($('quantidade').value);
+
+        if (!fertilizante || !fazenda || !pivo) return mostrarErro('Selecione fertilizante, fazenda e pivô');
+        if (!(quantidade > 0)) return mostrarErro('Informe uma quantidade maior que zero');
+
+        limparMensagens();
+        carrinho.push({ fertilizante, fazenda, pivo, quantidade, tipoAplicacao: $('tipo').value });
+        $('quantidade').value = '';
+        renderCarrinho();
+      }
+
+      async function emitir() {
+        if (carrinho.length === 0) return mostrarErro('Adicione ao menos um item ao carrinho');
+        const itens = carrinho.map((i) => ({
+          fertilizanteId: i.fertilizante.id,
+          fazendaId: i.fazenda.id,
+          pivoId: i.pivo.id,
+          quantidade: i.quantidade,
+          tipoAplicacao: i.tipoAplicacao,
+        }));
+        const { ok, corpo } = await api('/pedidos', { method: 'POST', body: JSON.stringify({ itens }) });
+        if (!ok) return mostrarErro(corpo.erro);
+        carrinho = [];
+        await carregar();
+        mostrarSucesso(`Pedido #${corpo.id} emitido com sucesso`);
+      }
+
+      async function agendar(id, dataAplicacao) {
+        const { ok, corpo } = await api(`/pedidos/${id}/agendar`, {
+          method: 'POST',
+          body: JSON.stringify({ dataAplicacao }),
+        });
+        if (!ok) return mostrarErro(corpo.erro);
+        await carregar();
+        mostrarSucesso(`Pedido #${id} agendado para ${dataAplicacao}`);
+      }
+
+      async function cancelar(id) {
+        const { ok, corpo } = await api(`/pedidos/${id}/cancelar`, { method: 'POST' });
+        if (!ok) return mostrarErro(corpo.erro);
+        await carregar();
+        mostrarSucesso(`Pedido #${id} cancelado`);
+      }
+
+      $('fazenda').addEventListener('change', () => {
+        const fazenda = fazendas.find((f) => String(f.id) === $('fazenda').value);
+        preencherSelect($('pivo'), fazenda ? fazenda.pivos : []);
+      });
+      $('adicionar').addEventListener('click', adicionarAoCarrinho);
+      $('emitir').addEventListener('click', emitir);
+
+      carregar();
+    </script>
+  </body>
+</html>
