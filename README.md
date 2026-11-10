@@ -1,5 +1,8 @@
 # QA Estoque de Fertilizantes
 
+[![Testes](https://github.com/SEU-USUARIO/qa-estoque-fertilizantes/actions/workflows/testes.yml/badge.svg)](https://github.com/SEU-USUARIO/qa-estoque-fertilizantes/actions/workflows/testes.yml)
+[Relatório mais recente dos testes](https://SEU-USUARIO.github.io/qa-estoque-fertilizantes/)
+
 Projeto de portfólio de automação de testes (API + E2E) com **Playwright** e **JavaScript**,
 sobre um sistema de gestão de estoque e aplicação de fertilizantes, com regras de negócio reais
 do domínio: controle de saldo, **bloqueio de pivô**, agendamento da aplicação e relatório de demanda.
@@ -25,7 +28,12 @@ O Playwright sobe a aplicação automaticamente antes dos testes. Para usar a te
 | API | Cadastros de fertilizante e fazenda, entrada de estoque, pedido, saldo, bloqueio de pivô, agendamento, cancelamento, relatório de demanda |
 | E2E | Fluxo carrinho, pedido e agendamento; bloqueio de pivô exibido na tela; erro de data no passado; cancelamento devolvendo estoque; carrinho vazio |
 
-As regras de negócio e as premissas adotadas estão em [`docs/regras-de-negocio.md`](docs/regras-de-negocio.md).
+## Documentação
+
+- [Estratégia de testes](docs/estrategia-de-testes.md)
+- [Análise de riscos](docs/analise-de-riscos.md)
+- [Regras de negócio e premissas](docs/regras-de-negocio.md)
+- [Rastreabilidade (cenário, regra e teste)](docs/rastreabilidade.md)
 
 ## Estrutura
 
@@ -34,7 +42,8 @@ As regras de negócio e as premissas adotadas estão em [`docs/regras-de-negocio
 - `tests/e2e/`: testes de interface
 - `tests/pages/`: Page Objects
 - `tests/fixtures/`: massa de dados (factories), helpers de cenário e limpeza automática entre testes
-- `docs/`: regras de negócio e decisões
+- `docs/`: estratégia de testes, riscos, regras de negócio e rastreabilidade
+- `.github/workflows/`: pipeline de CI
 
 ## Decisões técnicas
 
