@@ -8,6 +8,7 @@
 | Bloqueio de pivô | Aplicação **terrestre** do mesmo fertilizante, na mesma fazenda, em **outro pivô** é bloqueada enquanto houver pedido pendente. | 422 |
 | Aplicação aérea | Não sofre bloqueio de pivô. | 201 |
 | Cancelamento | Devolve o estoque reservado e libera o bloqueio de pivô. | 200 |
+| Expiração por prazo | Pedido `pendente` (sem data de aplicação) passa a `cancelado` quando passam mais de 5 dias úteis desde a emissão. Devolve o estoque e libera o pivô. Pedido `agendado` não expira. | 200 (consulta) |
 | Agendamento | Pedido `pendente` recebe data de aplicação (AAAA-MM-DD) e passa a `agendado`. Data de hoje é aceita; data passada não. | 200 / 422 |
 | Estados do pedido | Só pedido `pendente` pode ser agendado. Pedido `agendado` ou `cancelado` não pode ser agendado de novo. | 409 |
 | Relatório de demanda | Soma quantidade, valor e nº de pedidos por fertilizante, ignorando cancelados, do mais ao menos demandado (desempate por nome). | 200 |
@@ -15,6 +16,10 @@
 ## Premissas (validar com o negócio)
 
 - "Pendente" significa pedido emitido e não cancelado. Quando o agendamento for implementado, `agendado` também continua bloqueando.
+- **Prazo de 5 dias úteis (a validar com o negócio)**: o valor foi sugerido de memória e não confirmado no sistema original.
+- Dias úteis são de segunda a sexta, **sem considerar feriados**.
+- O dia da emissão não conta. Emitido na segunda, o 5º dia útil é a segunda seguinte (ainda pendente) e o cancelamento ocorre na terça.
+- A expiração é verificada quando o sistema é consultado, e não por um processo em segundo plano. Em produção, o mais comum é um job agendado.
 - Repetir o mesmo pivô não é bloqueado.
 - Pedido agendado continua bloqueando o pivô, igual ao pendente.
 - Não é possível reagendar. Para mudar a data, cancela-se e emite-se de novo.

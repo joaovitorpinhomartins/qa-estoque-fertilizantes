@@ -1,5 +1,6 @@
 import { db, nextId } from './store.js';
 import { isPositiveNumber } from './validacao.js';
+import { hoje, dataValida, diasUteisEntre } from './relogio.js';
 
 export const TIPOS_APLICACAO = ['terrestre', 'aerea'];
 
@@ -98,7 +99,9 @@ export function criarPedido(body) {
   const pedido = {
     id: nextId(),
     status: 'pendente',
+    criadoEm: hoje(),
     dataAplicacao: null,
+    motivoCancelamento: null,
     itens,
     total: arredondar(itens.reduce((soma, i) => soma + i.subtotal, 0)),
   };
@@ -106,31 +109,27 @@ export function criarPedido(body) {
   return [201, pedido];
 }
 
+// Cancela o pedido: devolve o estoque reservado e, ao sair dos status bloqueantes,
+// libera o pivô. `motivo` é 'manual' ou 'prazo'.
+function cancelar(pedido, motivo) {
+  for (const item of pedido.itens) {
+    db.fertilizantes.find((f) => f.id === item.fertilizanteId).saldo += item.quantidade;
+  }
+  pedido.status = 'cancelado';
+  pedido.motivoCancelamento = motivo;
+  pedido.canceladoEm = hoje();
+}
+
 export function cancelarPedido(id) {
   const pedido = db.pedidos.find((p) => p.id === id);
   if (!pedido) return [404, { erro: 'Pedido não encontrado' }];
   if (pedido.status === 'cancelado') return [409, { erro: 'Pedido já cancelado' }];
 
-  for (const item of pedido.itens) {
-    db.fertilizantes.find((f) => f.id === item.fertilizanteId).saldo += item.quantidade;
-  }
-  pedido.status = 'cancelado';
+  cancelar(pedido, 'manual');
   return [200, pedido];
 }
 
 // --- Agendamento -----------------------------------------------------------
-const FORMATO_DATA = /^\d{4}-\d{2}-\d{2}$/;
-
-const formatarData = (d) =>
-  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-
-function dataValida(texto) {
-  if (typeof texto !== 'string' || !FORMATO_DATA.test(texto)) return false;
-  const [ano, mes, dia] = texto.split('-').map(Number);
-  const data = new Date(ano, mes - 1, dia);
-  return data.getFullYear() === ano && data.getMonth() === mes - 1 && data.getDate() === dia;
-}
-
 export function agendarPedido(id, body) {
   const pedido = db.pedidos.find((p) => p.id === id);
   if (!pedido) return [404, { erro: 'Pedido não encontrado' }];
@@ -140,10 +139,24 @@ export function agendarPedido(id, body) {
   if (!dataValida(body.dataAplicacao)) {
     return [400, { erro: 'Data de aplicação inválida. Use o formato AAAA-MM-DD' }];
   }
-  if (body.dataAplicacao < formatarData(new Date())) {
+  if (body.dataAplicacao < hoje()) {
     return [422, { erro: 'Data de aplicação não pode estar no passado' }];
   }
   pedido.dataAplicacao = body.dataAplicacao;
   pedido.status = 'agendado';
   return [200, pedido];
+}
+
+// --- Expiração por prazo ---------------------------------------------------
+export const PRAZO_DIAS_UTEIS = 5;
+
+// Pedido pendente (sem data de aplicação) é cancelado quando passam mais de
+// PRAZO_DIAS_UTEIS dias úteis desde a emissão. Pedido agendado não expira.
+// Chamada a cada requisição, antes de qualquer consulta ou operação.
+export function expirarPedidosVencidos() {
+  for (const pedido of db.pedidos) {
+    if (pedido.status === 'pendente' && diasUteisEntre(pedido.criadoEm, hoje()) > PRAZO_DIAS_UTEIS) {
+      cancelar(pedido, 'prazo');
+    }
+  }
 }

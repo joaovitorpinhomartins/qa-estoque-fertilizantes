@@ -71,7 +71,7 @@
     <section>
       <h2>Pedidos</h2>
       <table aria-label="Pedidos">
-        <thead><tr><th>Pedido</th><th>Status</th><th>Data de aplicação</th><th>Total</th><th>Ações</th></tr></thead>
+        <thead><tr><th>Pedido</th><th>Emissão</th><th>Status</th><th>Data de aplicação</th><th>Total</th><th>Ações</th></tr></thead>
         <tbody id="pedidos"></tbody>
       </table>
     </section>
@@ -175,7 +175,8 @@
             }
             return el('tr', { 'data-testid': `pedido-${p.id}` },
               el('td', {}, `#${p.id}`),
-              el('td', {}, p.status),
+              el('td', {}, p.criadoEm),
+              el('td', {}, p.status + (p.motivoCancelamento === 'prazo' ? ' (prazo vencido)' : '')),
               el('td', {}, p.dataAplicacao ?? '—'),
               el('td', {}, brl(p.total)),
               acoes,

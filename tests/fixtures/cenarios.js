@@ -44,3 +44,11 @@ export async function buscarSaldo(request, fertilizanteId) {
   const lista = await (await request.get('/fertilizantes')).json();
   return lista.find((f) => f.id === fertilizanteId).saldo;
 }
+
+// Fixa a data de "hoje" na aplicação (o reset automático restaura o relógio real).
+export async function definirHoje(request, data) {
+  const resposta = await request.post('/test/relogio', { data: { data } });
+  expect(resposta.status()).toBe(204);
+}
+
+export const listarPedidos = async (request) => (await request.get('/pedidos')).json();

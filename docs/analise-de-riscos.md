@@ -19,9 +19,11 @@ Os riscos sem cobertura estão listados de propósito: saber o que não está te
 | R12 | Regras implementadas com base em premissa errada | Alta | Médio | Premissas documentadas para validação com o negócio | Em aberto |
 | R13 | Diferença de fuso entre cliente e servidor na regra "data no passado" | Baixa | Médio | Datas relativas a hoje. Risco residual perto da meia-noite | Parcial |
 | R14 | Lentidão com muitos pedidos e fazendas | Baixa | Médio | Não testado. Previsto para um projeto de performance | **Não coberto** |
+| R15 | Cancelamento automático errado: prazo contado de forma incorreta (fim de semana, valor-limite) ou cancelando pedido agendado | Média | Alto | CT13: 5º e 6º dia útil, fim de semana, pedido agendado, liberação de estoque e pivô, relatório | Parcial: feriados não considerados |
 
 ## Prioridade dos próximos testes
 1. **R9 (concorrência)**: testar com chamadas paralelas ao endpoint de pedido.
 2. **R12 (premissas)**: validar as premissas de `regras-de-negocio.md` com quem conhece o sistema.
 3. **R8 (período do relatório)**: definir a regra e cobrir.
-4. **R14 (performance)**: scripts em k6, com limites de p95 e taxa de erro.
+4. **R15 (feriados)**: definir se o calendário de feriados entra na contagem de dias úteis.
+5. **R14 (performance)**: scripts em k6, com limites de p95 e taxa de erro.

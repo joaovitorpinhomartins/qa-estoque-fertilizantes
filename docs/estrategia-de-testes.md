@@ -47,14 +47,18 @@ fragilidade e o tempo de execução.
 | Aérea | Terrestre | Sim | Sim | Não | Permite |
 
 - **Transição de estados** do pedido:
-  - Válidas: pendente → agendado, pendente → cancelado, agendado → cancelado
+  - Válidas: pendente → agendado, pendente → cancelado (manual ou por prazo), agendado → cancelado
   - Inválidas (testadas): agendar pedido cancelado, reagendar pedido agendado, cancelar duas vezes
+- **Controle do tempo**: regras de prazo (5 dias úteis) são testadas com um relógio controlável
+  (`POST /test/relogio`), sem esperar dias de verdade. Valores-limite: 5º dia útil (ainda pendente),
+  6º dia útil (cancelado) e fins de semana (não contam).
 - **Verificação de efeitos colaterais**: toda rejeição confere que o estoque e os pedidos não mudaram.
 
 ## Dados de teste
 - Factories geram dados únicos e válidos. Cada teste altera só o campo que quer exercitar.
 - Uma fixture automática zera a aplicação antes de cada teste, então os testes são independentes.
-- Datas são sempre relativas a hoje, para a suíte não quebrar com o tempo.
+- Datas são relativas a hoje, ou fixas quando o relógio é controlado, para a suíte não quebrar com o tempo.
+- O reset automático também restaura o relógio real.
 
 ## Execução
 - Local: `npm test`, com relatório HTML em `npm run report`.

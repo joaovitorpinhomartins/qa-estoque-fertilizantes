@@ -2,7 +2,8 @@ import http from 'node:http';
 import { readFileSync } from 'node:fs';
 import { db, nextId, reset } from './store.js';
 import { isNonEmptyString, isPositiveNumber } from './validacao.js';
-import { criarPedido, cancelarPedido, agendarPedido } from './pedidos.js';
+import { criarPedido, cancelarPedido, agendarPedido, expirarPedidosVencidos } from './pedidos.js';
+import { definirHoje, restaurarRelogio } from './relogio.js';
 import { relatorioDemanda } from './relatorios.js';
 
 const PORT = process.env.PORT || 3000;
@@ -87,8 +88,19 @@ const server = http.createServer(async (req, res) => {
     // Endpoint de apoio aos testes: limpa os dados entre cenários.
     if (method === 'POST' && pathname === '/test/reset') {
       reset();
+      restaurarRelogio();
       return send(res, 204);
     }
+
+    // Fixa a data de "hoje" para testar regras de prazo sem esperar dias de verdade.
+    if (method === 'POST' && pathname === '/test/relogio') {
+      const { data } = await readJson(req);
+      if (!definirHoje(data)) return send(res, 400, { erro: 'Data inválida. Use AAAA-MM-DD' });
+      return send(res, 204);
+    }
+
+    // Antes de qualquer consulta ou operação, cancela os pedidos com prazo vencido.
+    expirarPedidosVencidos();
 
     if (method === 'GET' && pathname === '/fertilizantes') return send(res, 200, db.fertilizantes);
     if (method === 'POST' && pathname === '/fertilizantes') {

@@ -16,6 +16,7 @@ Relação entre cenário, regra de negócio e onde está o teste.
 | CT10 | Relatório de demanda ordenado e sem pedidos cancelados | `tests/api/relatorios.spec.js` | |
 | CT11 | Fluxo completo pela tela: carrinho, pedido e agendamento | | `tests/e2e/pedidos.spec.js` |
 | CT12 | Bloqueio exibido na tela e aplicação aérea aceita (integração API + tela) | | `tests/e2e/pedidos.spec.js` |
+| CT13 | Pedido sem data de aplicação é cancelado após 5 dias úteis, devolvendo estoque e liberando o pivô; pedido agendado não expira | `tests/api/expiracao.spec.js` | `tests/e2e/expiracao.spec.js` |
 
 Os identificadores CT aparecem no título de cada teste, então é possível filtrar pelo relatório
 ou rodar um grupo com `npx playwright test -g "CT06"`.
