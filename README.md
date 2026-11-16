@@ -1,11 +1,12 @@
 # QA Estoque de Fertilizantes
 
-[![Testes](https://github.com/SEU-USUARIO/qa-estoque-fertilizantes/actions/workflows/testes.yml/badge.svg)](https://github.com/SEU-USUARIO/qa-estoque-fertilizantes/actions/workflows/testes.yml)
-[Relatório mais recente dos testes](https://SEU-USUARIO.github.io/qa-estoque-fertilizantes/)
+[![Testes](https://github.com/joaovitorpinhomartins/qa-estoque-fertilizantes/actions/workflows/testes.yml/badge.svg)](https://github.com/joaovitorpinhomartins/qa-estoque-fertilizantes/actions/workflows/testes.yml)
+
+[Relatório mais recente dos testes](https://joaovitorpinhomartins.github.io/qa-estoque-fertilizantes/)
 
 Projeto de portfólio de automação de testes (API + E2E) com **Playwright** e **JavaScript**,
 sobre um sistema de gestão de estoque e aplicação de fertilizantes, com regras de negócio reais
-do domínio: controle de saldo, **bloqueio de pivô**, agendamento da aplicação e relatório de demanda.
+do domínio: controle de saldo, **bloqueio de pivô**, agendamento da aplicação, cancelamento por prazo (5 dias úteis) e relatório de demanda.
 
 ## Como rodar
 
@@ -25,7 +26,7 @@ O Playwright sobe a aplicação automaticamente antes dos testes. Para usar a te
 
 | Camada | Cenários |
 |---|---|
-| API | Cadastros de fertilizante e fazenda, entrada de estoque, pedido, saldo, bloqueio de pivô, agendamento, cancelamento, relatório de demanda |
+| API | Cadastros de fertilizante e fazenda, entrada de estoque, pedido, saldo, bloqueio de pivô, agendamento, cancelamento manual e por prazo (com relógio controlável), relatório de demanda |
 | E2E | Fluxo carrinho, pedido e agendamento; bloqueio de pivô exibido na tela; erro de data no passado; cancelamento devolvendo estoque; carrinho vazio |
 
 ## Documentação
@@ -51,3 +52,4 @@ O Playwright sobe a aplicação automaticamente antes dos testes. Para usar a te
 - **Estado inicial via API**: os testes E2E montam os dados pela API e usam a tela só para o que ela faz.
 - **Isolamento**: uma fixture automática zera os dados antes de cada teste.
 - **Datas relativas a hoje**: a suíte não quebra com o passar do tempo.
+- **Relógio controlável**: regras de prazo são testadas sem esperar dias de verdade.
